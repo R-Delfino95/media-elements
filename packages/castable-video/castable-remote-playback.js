@@ -76,6 +76,22 @@ export class RemotePlayback extends EventTarget {
 
   destroy() {
     this.#media?.textTracks?.removeEventListener('change', this.#onTextTrackChange);
+
+    // Remove controller listeners if casting was active.
+    if (this.#remoteListeners && this.#remotePlayer?.controller) {
+      Object.entries(this.#remoteListeners).forEach(([event, listener]) => {
+        this.#remotePlayer.controller.removeEventListener(event, listener);
+      });
+    }
+
+    if (this.#media) castElementRef.delete(this.#media);
+
+    privateProps.delete(this);
+    this.#callbacks.clear();
+    this.#remoteListeners = null;
+    this.#remotePlayer = null;
+    this.#media = null;
+    this.#isInit = false;
   }
 
   get #castPlayer() {

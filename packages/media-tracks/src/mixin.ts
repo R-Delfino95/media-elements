@@ -151,8 +151,13 @@ export function MediaTracksMixin<T>(MediaElementClass: T): WithMediaTracks<T> {
 }
 
 export function cleanupMediaTracks(media: HTMLMediaElement): void {
-  getPrivate(media).nativeVideoTrackCleanup?.();
-  getPrivate(media).nativeAudioTrackCleanup?.();
+  const priv = getPrivate(media);
+  priv.nativeVideoTrackCleanup?.();
+  priv.nativeAudioTrackCleanup?.();
+
+  for (const key of Object.keys(priv)) {
+    delete priv[key];
+  }
 }
 
 function getBaseMediaTracksFn(MediaElementClass: any, type: string) {

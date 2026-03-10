@@ -267,7 +267,7 @@ export function CustomMediaMixin<T extends Constructor<HTMLElement>>(superclass:
     #nativeEl: HTMLVideoElement | HTMLAudioElement | null = null;
     #childMap = new Map<MediaChild, MediaChild>();
     #childObserver?: MutationObserver;
-    #slotChangeHandler = () => this.#syncMediaChildren();
+    #slotChangeHandler?: () => void;
 
     get: ((prop: string) => any) | undefined;
     set: ((prop: string, val: any) => void) | undefined;
@@ -344,6 +344,7 @@ export function CustomMediaMixin<T extends Constructor<HTMLElement>>(superclass:
       }
 
       this.#childObserver = new MutationObserver(this.#syncMediaChildAttribute.bind(this));
+      this.#slotChangeHandler = () => this.#syncMediaChildren();
       this.shadowRoot!.addEventListener('slotchange', this.#slotChangeHandler);
       this.#syncMediaChildren();
 
@@ -447,13 +448,31 @@ export function CustomMediaMixin<T extends Constructor<HTMLElement>>(superclass:
     }
 
     connectedCallback(): void {
+      if (this.#isInit) {
+        // Re-mount: only re-setup if listeners were cleaned up in disconnectedCallback.
+        if (!this.#slotChangeHandler) {
+          this.#childObserver = new MutationObserver(this.#syncMediaChildAttribute.bind(this));
+          this.#slotChangeHandler = () => this.#syncMediaChildren();
+          this.shadowRoot?.addEventListener('slotchange', this.#slotChangeHandler);
+          this.#syncMediaChildren();
+
+          for (const type of (this.constructor as typeof CustomMedia).Events) {
+            this.shadowRoot?.addEventListener(type, this, true);
+          }
+        }
+        return;
+      }
       this.#init();
     }
 
     disconnectedCallback(): void {
       this.#childObserver?.disconnect();
+      this.#childObserver = undefined;
 
-      this.shadowRoot?.removeEventListener('slotchange', this.#slotChangeHandler);
+      if (this.#slotChangeHandler) {
+        this.shadowRoot?.removeEventListener('slotchange', this.#slotChangeHandler);
+        this.#slotChangeHandler = undefined;
+      }
 
       for (const type of (this.constructor as typeof CustomMedia).Events) {
         this.shadowRoot?.removeEventListener(type, this, true);
@@ -462,7 +481,11 @@ export function CustomMediaMixin<T extends Constructor<HTMLElement>>(superclass:
       this.#childMap.forEach((clone) => clone.remove());
       this.#childMap.clear();
 
-      this.#isInit = false;
+      this.#nativeEl = null;
+      // Keep #isInit = true so that #init() is a no-op during the rest of
+      // the disconnect process. Other mixins in the chain may access properties
+      // (e.g. this.nativeEl, this.currentTime) which trigger #init() → init()
+      // and re-create the closures we just cleaned up.
     }
   };
 }
