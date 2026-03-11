@@ -361,6 +361,7 @@ class VimeoVideoElement extends MediaPlayedRangesMixin(globalThis.HTMLElement ??
   }
 
   disconnectedCallback() {
+    this.textTracks?.removeEventListener('change', this.#onTextTrackChange);
     this.api?.destroy();
     this.api = null;
     this.#isInit = false;

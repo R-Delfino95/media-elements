@@ -21,6 +21,8 @@ const HlsVideoMixin = (superclass) => {
     #airplaySourceEl = null;
     #config = null;
     #hasTracksInit = false;
+    #levelIdMap = null;
+    #lastFailedLevel = null;
 
     constructor() {
       super();
@@ -246,47 +248,50 @@ const HlsVideoMixin = (superclass) => {
       }
     };
 
+    // Fired when a level is removed after calling `removeLevel()`
+    #onLevelsUpdated = (event, data) => {
+      const videoTrack = this.videoTracks[this.videoTracks.selectedIndex ?? 0];
+      if (!videoTrack) return;
+
+      const levelIds = data.levels.map((l) => this.#levelIdMap.get(l));
+
+      for (const rendition of this.videoRenditions) {
+        if (rendition.id && !levelIds.includes(rendition.id)) {
+          videoTrack.removeRendition(rendition);
+        }
+      }
+    };
+
+    #onHlsError = (event, data) => {
+      if (data.type === Hls.ErrorTypes.NETWORK_ERROR && data.details === Hls.ErrorDetails.FRAG_LOAD_ERROR) {
+        this.#lastFailedLevel = data.frag.level;
+      }
+    };
+
+    #onLevelSwitched = (event, data) => {
+      const newLevel = data.level;
+
+      if (this.#lastFailedLevel !== null && newLevel < this.#lastFailedLevel) {
+        console.warn(
+          `⚠️ hls.js downgraded quality from level ${this.#lastFailedLevel} to ${newLevel} due to fragment load failure.`
+        );
+        this.videoRenditions.selectedIndex = newLevel;
+        this.#lastFailedLevel = null;
+      }
+    };
+
     #initTracksListeners(levelIdMap) {
       if (this.#hasTracksInit) return;
       this.#hasTracksInit = true;
 
+      this.#levelIdMap = levelIdMap;
+
       this.audioTracks.addEventListener('change', this.#onAudioTrackChange);
       this.videoRenditions?.addEventListener('change', this.#onSwitchRendition);
 
-      // Fired when a level is removed after calling `removeLevel()`
-      this.api.on(Hls.Events.LEVELS_UPDATED, (event, data) => {
-        const videoTrack = this.videoTracks[this.videoTracks.selectedIndex ?? 0];
-        if (!videoTrack) return;
-
-        const levelIds = data.levels.map((l) => levelIdMap.get(l));
-
-        for (const rendition of this.videoRenditions) {
-          if (rendition.id && !levelIds.includes(rendition.id)) {
-            videoTrack.removeRendition(rendition);
-          }
-        }
-      });
-
-      let lastFailedLevel = null;
-
-      this.api.on(Hls.Events.ERROR, (event, data) => {
-        if (data.type === Hls.ErrorTypes.NETWORK_ERROR && data.details === Hls.ErrorDetails.FRAG_LOAD_ERROR) {
-          lastFailedLevel = data.frag.level;
-        }
-      });
-
-      this.api.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
-        const newLevel = data.level;
-
-        if (lastFailedLevel !== null && newLevel < lastFailedLevel) {
-          console.warn(
-            `⚠️ hls.js downgraded quality from level ${lastFailedLevel} to ${newLevel} due to fragment load failure.`
-          );
-          this.videoRenditions.selectedIndex = newLevel;
-          lastFailedLevel = null;
-        }
-      });
-
+      this.api.on(Hls.Events.LEVELS_UPDATED, this.#onLevelsUpdated);
+      this.api.on(Hls.Events.ERROR, this.#onHlsError);
+      this.api.on(Hls.Events.LEVEL_SWITCHED, this.#onLevelSwitched);
       this.api.once(Hls.Events.DESTROYING, this.#removeAllMediaTracks);
     }
 
@@ -296,6 +301,14 @@ const HlsVideoMixin = (superclass) => {
 
       this.audioTracks.removeEventListener('change', this.#onAudioTrackChange);
       this.videoRenditions?.removeEventListener('change', this.#onSwitchRendition);
+
+      this.api?.off(Hls.Events.LEVELS_UPDATED, this.#onLevelsUpdated);
+      this.api?.off(Hls.Events.ERROR, this.#onHlsError);
+      this.api?.off(Hls.Events.LEVEL_SWITCHED, this.#onLevelSwitched);
+      this.api?.off(Hls.Events.DESTROYING, this.#removeAllMediaTracks);
+
+      this.#levelIdMap = null;
+      this.#lastFailedLevel = null;
     }
 
     #toggleHlsLoad = () => {

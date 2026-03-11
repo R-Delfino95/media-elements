@@ -377,6 +377,7 @@ class YoutubeVideoElement extends MediaPlayedRangesMixin(globalThis.HTMLElement 
   }
 
   disconnectedCallback() {
+    this.textTracks?.removeEventListener('change', this.#onTextTrackChange);
     clearInterval(this.#seekInterval);
     clearInterval(this.#progressInterval);
     this.api?.destroy();

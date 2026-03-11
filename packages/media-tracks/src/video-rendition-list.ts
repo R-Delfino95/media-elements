@@ -59,6 +59,7 @@ export function selectedChanged(rendition: VideoRendition) {
 
 function getCurrentRenditions(renditionList: VideoRenditionList): VideoRendition[] {
   const media: HTMLMediaElement = getPrivate(renditionList).media?.deref();
+  if (!media) return [];
   return [...media.videoTracks]
     .filter((track: VideoTrack) => track.selected)
     .flatMap((track: VideoTrack) => [...getPrivate(track).renditionSet]);

@@ -73,14 +73,14 @@ class ShakaVideoElement extends MediaTracksMixin(CustomVideoElement) {
     }
   }
 
-  #removeAllMediaTracks = () => {
+  #removeAllMediaTracks() {
     for (const videoTrack of this.videoTracks) {
       this.removeVideoTrack(videoTrack);
     }
     for (const audioTrack of this.audioTracks) {
       this.removeAudioTrack(audioTrack);
     }
-  };
+  }
 
   #addMediaTracks() {
     this.#removeAllMediaTracks();

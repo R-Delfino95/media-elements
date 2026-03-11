@@ -109,14 +109,14 @@ class DashVideoElement extends MediaTracksMixin(CustomVideoElement) {
     }
   };
 
-  #removeAllMediaTracks = () => {
+  #removeAllMediaTracks() {
     for (const videoTrack of this.videoTracks) {
       this.removeVideoTrack(videoTrack);
     }
     for (const audioTrack of this.audioTracks) {
       this.removeAudioTrack(audioTrack);
     }
-  };
+  }
 
   #initTracksListeners() {
     this.videoRenditions.addEventListener('change', this.#onRenditionChange);

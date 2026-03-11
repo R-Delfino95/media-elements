@@ -59,6 +59,7 @@ export function selectedChanged(rendition: AudioRendition) {
 
 function getCurrentRenditions(renditionList: AudioRenditionList): AudioRendition[] {
   const media: HTMLMediaElement = getPrivate(renditionList).media?.deref();
+  if (!media) return [];
   return [...media.audioTracks]
     .filter((track: AudioTrack) => track.enabled)
     .flatMap((track: AudioTrack) => [...getPrivate(track).renditionSet]);
