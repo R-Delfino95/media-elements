@@ -1,5 +1,5 @@
 import { CustomVideoElement } from 'custom-media-element';
-import { MediaTracksMixin, cleanupMediaTracks } from 'media-tracks';
+import { MediaTracksMixin } from 'media-tracks';
 
 class DashVideoElement extends MediaTracksMixin(CustomVideoElement) {
   static shadowRootOptions = { ...CustomVideoElement.shadowRootOptions };
@@ -17,7 +17,6 @@ class DashVideoElement extends MediaTracksMixin(CustomVideoElement) {
     this.#removeAllMediaTracks();
     this.#destroy();
     super.disconnectedCallback();
-    cleanupMediaTracks(this);
   }
 
   #destroy() {

@@ -1,6 +1,6 @@
 // https://docs.videojs.com/
 import { SuperVideoElement } from 'super-media-element';
-import { MediaTracksMixin, cleanupMediaTracks } from 'media-tracks';
+import { MediaTracksMixin } from 'media-tracks';
 
 const templateShadowDOM = globalThis.document?.createElement('template');
 if (templateShadowDOM) {
@@ -193,7 +193,6 @@ class VideojsVideoElement extends (MediaTracksMixin?.(SuperVideoElement ?? class
     this.#removeFontStyles();
     this.#destroy();
     super.disconnectedCallback();
-    cleanupMediaTracks(this);
   }
 
   connectedCallback() {

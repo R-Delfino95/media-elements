@@ -150,16 +150,6 @@ export function MediaTracksMixin<T>(MediaElementClass: T): WithMediaTracks<T> {
   return MediaElementClass as unknown as WithMediaTracks<T>;
 }
 
-export function cleanupMediaTracks(media: HTMLMediaElement): void {
-  const priv = getPrivate(media);
-  priv.nativeVideoTrackCleanup?.();
-  priv.nativeAudioTrackCleanup?.();
-
-  for (const key of Object.keys(priv)) {
-    delete priv[key];
-  }
-}
-
 function getBaseMediaTracksFn(MediaElementClass: any, type: string) {
   if (MediaElementClass?.prototype) {
     return Object.getOwnPropertyDescriptor(MediaElementClass.prototype, `${type}Tracks`)?.get;

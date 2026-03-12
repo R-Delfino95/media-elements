@@ -1,5 +1,5 @@
 import { CustomVideoElement } from 'custom-media-element';
-import { MediaTracksMixin, cleanupMediaTracks } from 'media-tracks';
+import { MediaTracksMixin } from 'media-tracks';
 import Hls from 'hls.js/dist/hls.mjs';
 
 const HlsVideoMixin = (superclass) => {
@@ -51,7 +51,6 @@ const HlsVideoMixin = (superclass) => {
       this.#removeTracksListeners();
       this.#destroy();
       super.disconnectedCallback();
-      cleanupMediaTracks(this);
     }
 
     #destroy() {

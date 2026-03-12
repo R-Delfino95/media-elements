@@ -1,5 +1,5 @@
 import { CustomVideoElement } from 'custom-media-element';
-import { MediaTracksMixin, cleanupMediaTracks } from 'media-tracks';
+import { MediaTracksMixin } from 'media-tracks';
 import './server-safe-globals.js';
 import shaka from 'shaka-player';
 
@@ -45,7 +45,6 @@ class ShakaVideoElement extends MediaTracksMixin(CustomVideoElement) {
     }
 
     super.disconnectedCallback();
-    cleanupMediaTracks(this);
   }
 
   attributeChangedCallback(attrName, oldValue, newValue) {
